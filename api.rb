@@ -76,16 +76,8 @@ def get_tsv_of yyyymm
   get_date_of_month(yyyymm).each do |d|
     line = [d]
     if timecard && timecard.yyyymmdd === d.gsub("-", "")
-      if timecard.attend
-        line << timecard.attend.strftime("%H:%M:%S")
-      else
-        line << ""
-      end
-      if timecard.leaving
-        line << timecard.leaving.strftime("%H:%M:%S")
-      else
-        line << ""
-      end
+      line << timecard.attend ? timecard.attend.strftime("%H:%M:%S") : ""
+      line << timecard.leaving ? timecard.leaving.strftime("%H:%M:%S") : ""
       timecard = timecards.shift
     end
     list << line.join("\t")

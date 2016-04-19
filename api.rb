@@ -32,7 +32,7 @@ get "/tsv/:yyyymm" do |yyyymm|
   end
   content_type "application/octet-stream"
   attachment yyyymm + ".tsv"
-  response.write get_tsv_of(yyyymm)
+  response.write get_tsv_of(yyyymm).join("\n")
 end
 
 error ValidationError do
@@ -62,27 +62,34 @@ def floor_by_15min min
     15
   when 30..44
     30
-  when 45..60 # 60 means leap second
+  when 45..59
     45
   else
     raise "not in range of 0..60: " + min
   end
 end
 
+require "pp"
 def get_tsv_of yyyymm
   timecards = Timecards.where("yyyymmdd LIKE ?", yyyymm + "%").order("yyyymmdd").to_a
   timecard = timecards.shift
-  list = ["date\tattend\tleaving"]
-  get_date_of_month(yyyymm).each do |d|
+  get_date_of_month(yyyymm).map do |d|
     line = [d]
     if timecard && timecard.yyyymmdd === d.gsub("-", "")
-      line << timecard.attend ? timecard.attend.strftime("%H:%M:%S") : ""
-      line << timecard.leaving ? timecard.leaving.strftime("%H:%M:%S") : ""
+      if timecard.attend
+        line << timecard.attend.strftime("%H:%M:%S")
+      else
+        line << ""
+      end
+      if timecard.leaving
+        line << timecard.leaving.strftime("%H:%M:%S")
+      else
+        line << ""
+      end
       timecard = timecards.shift
     end
-    list << line.join("\t")
+    line.join("\t")
   end
-  list.join("\n")
 end
 
 def get_date_of_month yyyymm
@@ -90,9 +97,7 @@ def get_date_of_month yyyymm
   month = yyyymm[4..6].to_i
   first = Date.new(year, month, 1)
   last = Date.new(year, month, -1)
-  list = []
-  (first..last).each do |d|
-    list << d.strftime("%Y-%m-%d")
+  (first..last).map do |d|
+    d.strftime("%Y-%m-%d")
   end
-  list
 end

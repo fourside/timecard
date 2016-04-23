@@ -5,16 +5,11 @@ require "sinatra"
 require File.dirname(__FILE__) + '/timecard.rb'
 
 
-get "/hello" do
-  "hello"
-end
-
 post "/attend" do
   timecard = today_timecard
   if timecard.new_record?
     timecard.attend = get_now
     timecard.save
-    # TODO output message not to update
   end
   "attend at " + timecard.attend.strftime("%H:%M:%S")
 end
@@ -24,6 +19,14 @@ post "/leave" do
   timecard.leaving = get_now
   timecard.save
   "leaving at " + timecard.leaving.strftime("%H:%M:%S")
+end
+
+post "/workedat" do
+  work_place = WorkPlace.new
+  work_place.latitude = params["latitude"]
+  work_place.longitude = params["longitude"]
+  work_place.save
+  "saved at #{work_place.latitude}, #{work_place.longitude}"
 end
 
 get "/tsv/:yyyymm" do |yyyymm|
@@ -39,7 +42,6 @@ error ValidationError do
   "error: " + env['sinatra.error'].message
 end
 
-
 def today_timecard
   yyyymmdd = Date.today.strftime("%Y%m%d")
   timecard = Timecards.find_by(yyyymmdd: yyyymmdd)
@@ -50,8 +52,15 @@ end
 
 def get_now
   today = DateTime.now
-  min = floor_by_15min(today.min)
-  Time.new(today.year, today.mon, today.day, today.hour, min, 0, "+09:00")
+  pin = Time.new(today.year, today.month, today.day, 8, 30, 0, "+09:00")
+  kiri = Time.new(today.year, today.month, today.day, 9, 15, 0, "+09:00")
+  morning = pin..kiri
+  if morning.cover?(today)
+    kiri
+  else
+    min = floor_by_15min(today.min)
+    Time.new(today.year, today.mon, today.day, today.hour, min, 0, "+09:00")
+  end
 end
 
 def floor_by_15min min

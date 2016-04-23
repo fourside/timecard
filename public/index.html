@@ -25,6 +25,10 @@
         <input id="leave" class="btn btn-primary" type="button" value="leave">
         <p id="leave_message"></p>
     </div>
+    <div>
+        <input id="worked_at" class="btn btn-primary" type="button" value="worked at">
+        <p id="worked_at_message"></p>
+    </div>
 </div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
@@ -35,7 +39,7 @@ $(function() {
             type: "POST",
         url: "/attend",
         success: function(data){
-            $("#attend_message").text(data)
+            $("#attend_message").text(data);
         }
         });
     });
@@ -44,11 +48,43 @@ $(function() {
             type: "POST",
             url: "/leave",
             success: function(data){
-                $("#leave_message").text(data)
+                $("#leave_message").text(data);
             }
         });
     });
+
+    $("#worked_at").click(function(){
+        navigator.geolocation.getCurrentPosition(onSuccess, onError);
+    });
 });
+function onSuccess(position) {
+    $.ajax({
+        type: "POST",
+        url: "/workedat",
+        data: {
+            "latitude": position.coords.latitude, 
+            "longitude": position.coords.longitude
+        },
+        success: function(data){
+            $("#worked_at_message").text(data);
+        }
+    });
+}
+function onError(error) {
+    var msg = "";
+    switch(error.code) {
+        case 1:
+            msg = "forbidden";
+        break;
+        case 2:
+            msg = "unavailable";
+        break;
+        case 3:
+            msg = "timeout";
+        break;
+    }
+    $("#worked_at_message").text(msg);
+}
 </script>
 </body>
 </html>
